@@ -6,6 +6,12 @@ This project is an independent open-source tool, not legal advice. AI-generated 
 
 ## What it does
 
+![ToS Decipher reviewing a privacy policy in the browser](docs/images/tos-decipher-overview.png)
+
+The review highlights important clauses and shows the supporting source text:
+
+![Expanded finding with plain-language explanation and source excerpt](docs/images/tos-decipher-finding-detail.png)
+
 - Summarizes policy text in plain language and highlights potentially important terms.
 - Shows findings alongside supporting excerpts from the source document.
 - Reviews policy links on a page and can identify legal disclosures embedded in expandable sections.
@@ -15,6 +21,8 @@ This project is an independent open-source tool, not legal advice. AI-generated 
 ## Privacy and data handling
 
 The extension reads page text and policy links only after you start a review or enable automatic review and grant the required browser permissions. It excludes form fields from page and disclosure text extraction, but this is not a guarantee that every page-specific sensitive detail will be excluded. The extension/API sends extracted policy text and relevant link labels and URLs to the API configured in the extension. The API then sends policy content to the configured AI providers; if you enable LangSmith tracing, trace inputs may also include policy text. Do not use real booking, payment, account, or other sensitive pages until you have reviewed the providers' data handling and retention policies and configured a backend you trust.
+
+The screenshots are product UI examples, not evidence of any provider endorsement or partnership.
 
 The extension currently targets a local API at `http://localhost:8000`. It is not ready for general distribution as a turnkey hosted service. Do not put provider credentials in the extension; keep them on the server.
 
