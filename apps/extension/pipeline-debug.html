@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ToS Defender — run pipeline explainer</title>
+  <style>
+    :root{color-scheme:light;--ink:#172033;--muted:#5a667b;--line:#d8deea;--surface:#fff;--wash:#f4f6fa;--accent:#2857c5;--warning:#7a4b08;--warning-bg:#fff7e8;--ok:#216548;--ok-bg:#edf7f1;font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box}body{margin:0;background:#f4f6fa;color:var(--ink)}main{max-width:1100px;margin:auto;padding:36px 24px 64px}h1,h2,h3,p{margin-top:0}h1{font-size:clamp(28px,4vw,40px);line-height:1.15;letter-spacing:-.03em;margin-bottom:10px}h2{font-size:22px;letter-spacing:-.02em;margin-bottom:12px}h3{font-size:16px;margin:7px 0}p{margin-bottom:9px}.intro{max-width:760px;color:var(--muted);font-size:17px}.eyebrow{text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:700;color:var(--muted)}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:24px 0}.metric,.checkpoint,.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px}.metric{padding:15px}.metric strong{display:block;font-size:25px;line-height:1.2;letter-spacing:-.03em}.metric span{font-size:12px;color:var(--muted)}.callout{border-left:3px solid var(--accent);background:#edf2ff;padding:14px 16px;border-radius:0 10px 10px 0;margin:20px 0 30px}.callout.warning{border-color:#bb8129;background:var(--warning-bg);color:#49320f}.section{margin:34px 0}.flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;align-items:stretch}.checkpoint{padding:15px;position:relative}.checkpoint:not(:last-child):after{content:"";position:absolute;width:10px;right:-11px;top:27px;border-top:1px solid #9aa7bc;z-index:2}.number{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.1em}.outcome{border-top:1px solid var(--line);margin-top:12px;padding-top:10px;font-size:13px;color:var(--muted)}.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}.panel{padding:18px}.panel p:last-child{margin-bottom:0}.rows{display:grid;gap:8px}.row{display:grid;grid-template-columns:minmax(180px,.7fr) 1.5fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--line)}.row:last-child{border-bottom:0}.label{font-weight:650}.muted{color:var(--muted)}.error{color:#8b2d24}.steps{display:grid;gap:9px}.step{display:grid;grid-template-columns:24px 1fr;gap:12px;align-items:start}.node{width:12px;height:12px;border:2px solid var(--accent);border-radius:50%;margin:5px auto 0;background:white}.step:not(:last-child) .node:after{content:"";display:block;height:48px;border-left:1px solid var(--line);margin:10px 0 0 3px}.stepbody{padding-bottom:10px}.stepbody p{color:var(--muted);font-size:14px;margin-bottom:0}.bar{display:flex;height:16px;border-radius:9px;overflow:hidden;background:#e6eaf1;margin:12px 0 7px}.bar .rejected{background:#b8c1d0}.bar .likely{background:#526fc2}.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted)}.key{display:inline-flex;align-items:center;gap:6px}.swatch{width:9px;height:9px;border-radius:50%;background:#b8c1d0}.swatch.blue{background:#526fc2}.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}button{font:inherit;border:1px solid var(--line);border-radius:8px;background:white;color:var(--ink);padding:8px 12px;cursor:pointer}button:hover{border-color:#8b9ab2}details{border-top:1px solid var(--line);padding:11px 0}summary{cursor:pointer;font-weight:650}details p{margin:8px 0 0 20px;color:var(--muted);font-size:14px}.small{font-size:12px;color:var(--muted)}code{font: .93em ui-monospace,SFMono-Regular,Consolas,monospace;background:var(--wash);padding:1px 4px;border-radius:4px}.footer{border-top:1px solid var(--line);padding-top:18px;color:var(--muted);font-size:12px;margin-top:34px}@media(max-width:850px){.flow{grid-template-columns:repeat(2,minmax(0,1fr))}.checkpoint:not(:last-child):after{display:none}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){main{padding:24px 15px}.flow,.split{grid-template-columns:1fr}.row{grid-template-columns:1fr;gap:3px}.metrics{gap:7px}.metric{padding:12px}.metric strong{font-size:21px}}
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="eyebrow">Run reconstruction · based on the screenshot and current implementation</div>
+      <h1>What did ToS Defender do with those 51 links?</h1>
+      <p class="intro">“Found” and “classified” are candidate-discovery counts, not policy-review counts. The exact 51 destinations from the old run were not saved, so the first half reconstructs that run from its screenshot. The updated build now records per-link decisions and request-correlated diagnostics for the next run.</p>
+    </header>
+
+    <section class="metrics" aria-label="Run metrics">
+      <div class="metric"><strong>51</strong><span>unique same-origin links found</span></div>
+      <div class="metric"><strong>51 / 51</strong><span>candidates classified by TypeSafe</span></div>
+      <div class="metric"><strong>18*</strong><span>likely-policy candidates at the intermediate snapshot</span></div>
+      <div class="metric"><strong>3</strong><span>review errors reported at the end</span></div>
+    </section>
+
+    <div class="callout"><strong>Short version:</strong> all 51 links were sent through the cheap link-classification checkpoint so the extension could decide which ones looked like policies. They were not all full-reviewed. The screenshot’s intermediate <code>analyzing 18 · completed 33</code> is consistent with 33 rejected as non-policy and 18 classified as likely-policy; “analyzing” included queued work, not just simultaneous model requests.</div>
+
+    <section class="section">
+      <h2>The pipeline, checkpoint by checkpoint</h2>
+      <div class="flow">
+        <article class="checkpoint"><div class="number">CHECKPOINT 01</div><h3>Current page</h3><p>Send title and URL to the link classifier first. The body is not considered at this decision.</p><div class="outcome">This run: rejected as a likely policy, so current-page text was not analyzed.</div></article>
+        <article class="checkpoint"><div class="number">CHECKPOINT 02</div><h3>Find destinations</h3><p>Read DOM anchors, normalize away fragments, keep unique same-origin URLs, exclude the current URL; cap is 80.</p><div class="outcome">This run: 51 distinct destinations found.</div></article>
+        <article class="checkpoint"><div class="number">CHECKPOINT 03</div><h3>Classify links</h3><p>Send candidate IDs, visible labels and URLs to TypeSafe. A positive label means “likely”, not confirmed.</p><div class="outcome">51 classified. Intermediate display implies 18 likely and 33 not likely.</div></article>
+        <article class="checkpoint"><div class="number">CHECKPOINT 04</div><h3>Review likely pages</h3><p>Fetch same-origin HTML, extract readable text, then start a staged API review. Up to 3 link workers run concurrently.</p><div class="outcome">Only likely pages enter this step. Extraction/API failures count as review errors.</div></article>
+        <article class="checkpoint"><div class="number">CHECKPOINT 05</div><h3>Verify and render</h3><p>Fast scan emits provisional findings; full review validates source claims. The extension stores compact summaries.</p><div class="outcome">Only a small, truncated subset is shown in the overlay.</div></article>
+      </div>
+      <div class="bar" aria-label="Intermediate snapshot: 33 non-policy links and 18 likely policy links"><div class="rejected" style="width:64.7059%"></div><div class="likely" style="width:35.2941%"></div></div>
+      <div class="legend"><span class="key"><i class="swatch"></i>33 classified not likely-policy</span><span class="key"><i class="swatch blue"></i>18 likely-policy / queued at the screenshot checkpoint</span></div>
+      <p class="small">*18 is taken from the screenshot’s intermediate counter. The final pasted state says analyzing 0, completed 51; those final counters currently combine different outcomes and cannot prove how many reviews succeeded.</p>
+    </section>
+
+    <section class="section split">
+      <div class="panel">
+        <h2>Why “51 classified” is not “51 policies”</h2>
+        <div class="rows">
+          <div class="row"><div class="label">Found</div><div>Unique same-site links present in the page DOM, after URL filtering and deduplication.</div></div>
+          <div class="row"><div class="label">Classified</div><div>Each candidate got a TypeSafe decision. Ordinary navigation, product pages and support links are expected candidates too.</div></div>
+          <div class="row"><div class="label">Old “Analyzing”</div><div>Could mean classifier-pending or likely-policy links queued/active, depending on when the screenshot was captured. It was not a reliable count of actual LLM reviews.</div></div>
+          <div class="row"><div class="label">Old “Completed”</div><div>Included rejected non-policy links and terminal policy paths, including failures. It was not a successful-review count.</div></div>
+          <div class="row"><div class="label">New review states</div><div>Likely-policy candidates are now listed as queued, fetching, analyzing, succeeded, or failed. “Classifying” is shown separately before the classifier response.</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>The old final message was incorrect</h2>
+        <p>The previous extension version said “no policy pages needed full review” when <code>analyzing === 0</code> and <code>completed === found</code>. But non-policy links increased completed immediately, and failed policy reviews did too.</p>
+        <p class="error"><strong>The updated build replaces those counters with separate likely, queued, active, succeeded, and failed review counts.</strong></p>
+        <p class="muted">It also retains each discovered link’s label, redacted destination, classifier result, and review state in the popup’s “Link decisions” disclosure.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Why the output looks like a few vague “claims”</h2>
+      <div class="split">
+        <div class="panel">
+          <h3>“Reviewed 3 passages; 0 material point(s) passed evidence checks.”</h3>
+          <p>This is the API’s per-document overview metadata, not a claim. It means three extracted passages were reviewed and zero drafted points passed source/citation and claim-support checks for that document.</p>
+        </div>
+        <div class="panel">
+          <h3>“Hosting region can affect where agent data resides.”</h3>
+          <p>This is a finding explanation. The underlying finding also has an implication and exact source quote. The updated popup now labels initial results as provisional, full results as verified, and includes the source URL, implication, and quote.</p>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <p>Results were keyed by URL, but the title often fell back to the generic API title <code>Policy review</code>. The updated popup uses the link label and a sanitized source URL, labels initial results provisional versus verified, and shows each finding’s implication and source quote.</p>
+        <p class="muted">A full review can finish successfully with zero verified findings. Each link gets its own fast/full stream: one URL can fail its initial fast scan while another URL succeeds. The timeline now identifies link-specific stage messages and retains recent checkpoints.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>What this run’s messages mean</h2>
+      <div class="steps">
+        <div class="step"><div class="node"></div><div class="stepbody"><strong>“Current page wasn’t classified as a policy”</strong><p>TypeSafe judged the current title/URL insufficiently policy-like. Since the page body is checked only after a positive classification, a real policy page can be missed here.</p></div></div>
+        <div class="step"><div class="node"></div><div class="stepbody"><strong>“The initial AI scan failed”</strong><p>The API emitted this generic error when the fast scan failed before returning its initial event. The exact cause—provider response, model configuration, credentials, parsing, timeout, or network—requires the backend exception log for that request.</p></div></div>
+        <div class="step"><div class="node"></div><div class="stepbody"><strong>“3 review errors”</strong><p>Three failures were recorded across the old run. The updated diagnostics associate failures with a sanitized URL and identify whether classification, fetching, extraction, fast scan, or full review failed.</p></div></div>
+        <div class="step"><div class="node"></div><div class="stepbody"><strong>“Full review” marked done</strong><p>The phase indicator is page-wide, not a per-document ledger. Another candidate may still have failed; inspect each URL’s outcome separately before treating this as an all-success result.</p></div></div>
+      </div>
+    </section>
+
+    <section class="section panel">
+      <h2>Debug records needed to answer “which 51?”</h2>
+      <p>The current status stores counters and a few summaries, not the candidate list. These destinations cannot be reconstructed from the screenshot after the run.</p>
+      <details><summary>Candidate record (safe, useful fields)</summary><p>Stable candidate ID, anchor label, normalized URL (with sensitive query values removed), same-origin check, classifier decision, confidence, and policy type.</p></details>
+      <details><summary>Per-policy review record</summary><p>Candidate ID and URL, extracted character/passage counts, fetch outcome, fast event outcome, full event outcome, elapsed time, verified finding count, and a request correlation ID.</p></details>
+      <details><summary>Privacy boundary</summary><p>Keep raw policy text and full citation excerpts out of routine logs. Show structured checkpoints in the extension; keep provider stack traces and request IDs in backend logs for diagnosis.</p></details>
+      <div class="controls"><button id="openAll" type="button">Expand debug fields</button><button id="closeAll" type="button">Collapse debug fields</button></div>
+    </section>
+
+    <footer class="footer">This is a static reconstruction of the run shown in the supplied screenshot and pasted status text, not a live event log. Counts and implementation notes reflect the current extension and API code.</footer>
+  </main>
+  <script>
+    const disclosures = [...document.querySelectorAll("details")];
+    document.querySelector("#openAll").addEventListener("click", () => disclosures.forEach(item => item.open = true));
+    document.querySelector("#closeAll").addEventListener("click", () => disclosures.forEach(item => item.open = false));
+  </script>
+</body>
+</html>

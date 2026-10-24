@@ -1,0 +1,42 @@
+[
+  {
+    "inputs": {
+      "text": "Terms of Service\n\nThe company may change subscription prices by giving notice before your next renewal. You can cancel your subscription before renewal in your account settings.\n\nYou grant the company a license to host and display content you submit. The company may suspend accounts that violate these terms."
+    },
+    "outputs": {
+      "expected_categories": ["fees_or_price_changes", "renewal_or_cancellation"]
+    }
+  },
+  {
+    "inputs": {
+      "text": "Privacy Policy\n\nWe collect account information and device identifiers when you use the service. We share information with service providers that help us operate the service. You may request deletion by contacting our privacy team."
+    },
+    "outputs": {
+      "expected_categories": ["data_collection", "data_sharing"]
+    }
+  },
+  {
+    "inputs": {
+      "text": "Subscription Terms\n\nSubscriptions renew automatically at the end of each billing period unless cancelled at least 24 hours before renewal. Fees already paid are non-refundable except where required by law."
+    },
+    "outputs": {
+      "expected_categories": ["renewal_or_cancellation", "fees_or_price_changes"]
+    }
+  },
+  {
+    "inputs": {
+      "text": "Service Terms\n\nWe may suspend or discontinue any feature at any time. To the maximum extent permitted by law, we are not liable for indirect or consequential damages. Disputes must be brought individually and not as part of a class action."
+    },
+    "outputs": {
+      "expected_categories": ["service_changes", "liability", "disputes_or_arbitration"]
+    }
+  },
+  {
+    "inputs": {
+      "text": "Privacy Notice\n\nWe use precise location data to provide nearby recommendations. We retain location history for up to 90 days. We do not sell precise location data, but may share it with analytics providers under contract."
+    },
+    "outputs": {
+      "expected_categories": ["data_collection", "data_sharing"]
+    }
+  }
+]

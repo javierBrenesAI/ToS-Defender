@@ -1,0 +1,24 @@
+[project]
+name = "tos-decipher"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "langchain>=0.3.0",
+    "langchain-openrouter>=0.1.0",
+    "langchain-typesafe>=0.0.1a3",
+    "langsmith>=0.3.0",
+    "pydantic-settings>=2.7.0",
+    "python-dotenv>=1.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27.0",
+    "pytest>=8.0.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["apps/api"]

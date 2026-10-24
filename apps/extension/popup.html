@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ToS Defender</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <header class="brand">
+      <img src="icons/icon-48.png" alt="" width="32" height="32">
+      <div class="titles">
+        <h1>ToS Defender</h1>
+        <p data-i18n="popup.tagline">Know what you're agreeing to.</p>
+      </div>
+      <div class="language">
+        <button type="button" class="language-toggle" id="languageToggle" aria-haspopup="true" aria-expanded="false" aria-label="Language" data-i18n-aria="popup.languageLabel"></button>
+        <div class="language-menu" id="languageMenu" hidden>
+          <button type="button" class="language-option" data-language="en" aria-label="English" title="English" aria-pressed="false">
+            <svg viewBox="0 0 60 30" aria-hidden="true" focusable="false">
+              <rect width="60" height="30" fill="#012169"/>
+              <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/>
+              <path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" stroke-width="4"/>
+              <path d="M30,0 V30 M0,15 H60" stroke="#fff" stroke-width="10"/>
+              <path d="M30,0 V30 M0,15 H60" stroke="#C8102E" stroke-width="6"/>
+            </svg>
+          </button>
+          <button type="button" class="language-option" data-language="es" aria-label="Español" title="Español" aria-pressed="false">
+            <svg viewBox="0 0 3 2" aria-hidden="true" focusable="false">
+              <rect width="3" height="2" fill="#AA151B"/>
+              <rect y="0.5" width="3" height="1" fill="#F1BF00"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+    <p id="status" role="status" aria-live="polite">Check this page to find its terms and policies.</p>
+    <button id="review" class="primary" type="button">Check this page's terms</button>
+    <section id="documents" data-i18n-aria="popup.documentsAria" aria-live="polite"></section>
+    <details id="activity" hidden>
+      <summary data-i18n="popup.activity">Activity</summary>
+      <div id="timeline" class="timeline"></div>
+    </details>
+    <details id="linkDetails" hidden>
+      <summary id="linkSummary">All links checked</summary>
+      <p id="counts"></p>
+      <div id="links"></div>
+    </details>
+    <section id="settings">
+      <label class="setting-row">
+        <input type="checkbox" id="autoRun">
+        <span data-i18n="popup.autoRun">Review legal pages automatically</span>
+      </label>
+      <p class="hint" data-i18n="popup.autoRunHint">Runs only on pages with terms or policy links. Chrome asks once for access to all sites.</p>
+      <button type="button" id="siteToggle" hidden></button>
+      <h3 data-i18n="popup.blockedSites">Blocked sites</h3>
+      <ul id="blockedList"></ul>
+    </section>
+  </main>
+  <script src="src/i18n.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

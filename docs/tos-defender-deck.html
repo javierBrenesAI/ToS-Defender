@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ToS Defender — How it works</title>
+<style>
+:root{--brand:#3b4fd8;--ink:#172033;--muted:#5b6678;--line:#dfe3ec;--soft:#f4f6fb;--green:#15803d;--amber:#c26a04;--red:#dc2626;--grey:#64748b;--dark:#0f172a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0b1020;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);overflow:hidden}
+.viewport{position:fixed;inset:0;display:grid;place-items:center}
+.deck{position:relative;width:1280px;height:720px;transform-origin:center center}
+.slide{position:absolute;inset:0;background:#fff;border-radius:18px;padding:56px 72px;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex;animation:enter .35s ease}
+@keyframes enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.slide.dark{background:radial-gradient(circle at 80% 20%,#24307a 0,#0f172a 55%);color:#e7ebf7}
+.kicker{font-size:14px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);margin:0 0 10px}
+.dark .kicker{color:#9fb0ff}
+h1{font-size:64px;line-height:1.05;margin:0}
+h2{font-size:38px;line-height:1.15;margin:0 0 6px}
+.lede{font-size:19px;line-height:1.5;color:var(--muted);margin:6px 0 22px;max-width:980px}
+.dark .lede{color:#b8c2e0}
+.grow{flex:1;min-height:0}
+.row{display:flex;gap:22px}
+.col{flex:1;min-width:0}
+.card{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:#fff}
+.card h3{margin:0 0 6px;font-size:17px}
+.card p,.card li{font-size:14.5px;line-height:1.5;color:#3c4659;margin:0}
+.card ul{margin:6px 0 0;padding-left:18px}
+.soft{background:var(--soft);border-color:transparent}
+code,.mono{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:.92em}
+pre{margin:0;background:#0f172a;color:#dbe3ff;border-radius:12px;padding:14px 16px;font-size:12.5px;line-height:1.5;overflow:hidden;white-space:pre-wrap}
+pre .k{color:#9fb0ff}pre .s{color:#a5e3b5}pre .n{color:#ffcf8a}pre .c{color:#7d88a8}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--soft);color:var(--muted)}
+.bad{color:var(--red)}.good{color:var(--green)}
+.footer{position:absolute;left:72px;right:72px;bottom:22px;display:flex;justify-content:space-between;font-size:12px;color:#97a0b3}
+.dark .footer{color:#6f7ba0}
+svg text{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.step{display:flex;gap:14px;align-items:flex-start}
+.num{flex:none;width:32px;height:32px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;font-size:15px}
+.bars{display:grid;gap:7px}
+.bar{display:grid;grid-template-columns:230px 1fr 52px;gap:10px;align-items:center;font-size:13.5px}
+.bar .track{height:12px;background:#eef1f6;border-radius:6px;overflow:hidden}
+.bar .fill{height:100%;border-radius:6px}
+.bar b{font-variant-numeric:tabular-nums;text-align:right;font-size:13px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.mock-panel{width:330px;border:1px solid #d6dbe6;border-radius:14px;box-shadow:0 18px 40px rgba(15,23,42,.18);overflow:hidden;background:#fff;font-size:12.5px}
+.mock-panel header{display:flex;gap:8px;align-items:center;padding:12px}
+.mock-panel .verdict{margin:0 12px 8px;padding:8px 10px;border-radius:9px;background:#fdeeee;display:flex;gap:8px}
+.mock-panel .item{margin:0 12px 8px;border:1px solid #e3e7ef;border-radius:9px;padding:8px 10px}
+.mock-panel .lvl{font-size:10px;font-weight:700;letter-spacing:.04em;color:#3c4659;display:flex;gap:5px;align-items:center}
+.mock-panel .dot{width:7px;height:7px;border-radius:50%}
+.mock-panel footer{border-top:1px solid #eef1f6;padding:8px 12px;color:#6b7588;font-size:10.5px;display:flex;justify-content:space-between}
+.callout{position:absolute;font-size:13px;line-height:1.35;color:#3c4659;width:220px}
+.callout b{color:var(--ink)}
+.callout:before{content:"";position:absolute;top:8px;width:40px;border-top:2px dashed #b9c2e8}
+.callout.left:before{right:-48px}
+.callout.right:before{left:-48px}
+.nav{position:fixed;bottom:14px;right:18px;display:flex;gap:8px;align-items:center;color:#aab3cf;font-size:13px;z-index:5}
+.nav button{all:unset;cursor:pointer;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.08);color:#e7ebf7;font-size:16px}
+.nav button:hover{background:rgba(255,255,255,.16)}
+.nav button:focus-visible{outline:2px solid #9fb0ff}
+.progress{position:fixed;left:0;top:0;height:3px;background:var(--brand);transition:width .25s ease;z-index:5}
+.hint{position:fixed;bottom:20px;left:20px;color:#6f7ba0;font-size:12px}
+@media print{html,body{overflow:visible;background:#fff}.viewport{position:static;display:block}.deck{transform:none!important;width:auto;height:auto}.slide{position:relative;display:flex!important;width:1280px;height:720px;page-break-after:always;border-radius:0;animation:none}.nav,.progress,.hint{display:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="shield-brand" viewBox="0 0 24 24"><path d="M12 2 20 5v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5z" fill="#3b4fd8"/><path d="M8.5 7h4.9l2.1 2.1V17h-7z" fill="#fff"/><path d="M10 11h4v.9h-4zm0 1.9h4v.9h-4zm0 1.9h2.6v.9H10z" fill="#3b4fd8"/></symbol>
+    <symbol id="shield-pending" viewBox="0 0 24 24"><path d="M12 2 20 5v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5z" fill="#64748b"/><path d="M8.5 7h4.9l2.1 2.1V17h-7z" fill="#fff"/><path d="M10 11h4v.9h-4zm0 1.9h4v.9h-4zm0 1.9h2.6v.9H10z" fill="#64748b"/></symbol>
+    <symbol id="shield-clear" viewBox="0 0 24 24"><path d="M12 2 20 5v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5z" fill="#15803d"/><path d="M8.4 12.3 11 14.9l4.8-5.1" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="shield-caution" viewBox="0 0 24 24"><path d="M12 2 20 5v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5z" fill="#c26a04"/><path d="M12 7.6v5.3" stroke="#fff" stroke-width="2.3" stroke-linecap="round"/><circle cx="12" cy="16.2" r="1.35" fill="#fff"/></symbol>
+    <symbol id="shield-warning" viewBox="0 0 24 24"><path d="M12 2 20 5v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5z" fill="#dc2626"/><path d="M12 7.6v5.3" stroke="#fff" stroke-width="2.3" stroke-linecap="round"/><circle cx="12" cy="16.2" r="1.35" fill="#fff"/></symbol>
+    <symbol id="shield-error" viewBox="0 0 24 24"><path d="M12 2 20 5v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5z" fill="#64748b"/><path d="M8.8 12h6.4" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#7b86a8"/></marker>
+    <marker id="arrow-brand" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#3b4fd8"/></marker>
+  </defs>
+</svg>
+
+<div class="progress" id="progress"></div>
+<div class="viewport">
+<div class="deck" id="deck">
+
+<section class="slide dark">
+  <div class="grow" style="display:flex;flex-direction:column;justify-content:center">
+    <svg width="96" height="96" style="margin-bottom:26px"><use href="#shield-brand"/></svg>
+    <p class="kicker">Technical walkthrough</p>
+    <h1>ToS Defender</h1>
+    <p class="lede" style="font-size:24px;max-width:820px;margin-top:16px">A browser extension that finds the terms and policies behind “I agree”, translates the fine print into plain language, and flags what could cost you money, rights, or control.</p>
+    <div class="row" style="margin-top:26px;gap:12px">
+      <span class="tag" style="background:rgba(255,255,255,.1);color:#cdd6f5">Chrome / Edge MV3</span>
+      <span class="tag" style="background:rgba(255,255,255,.1);color:#cdd6f5">FastAPI</span>
+      <span class="tag" style="background:rgba(255,255,255,.1);color:#cdd6f5">TypeSafe Jev</span>
+      <span class="tag" style="background:rgba(255,255,255,.1);color:#cdd6f5">OpenRouter LLMs</span>
+      <span class="tag" style="background:rgba(255,255,255,.1);color:#cdd6f5">Server-sent events</span>
+    </div>
+  </div>
+  <div class="footer"><span>Use ← → or Space to navigate</span><span>ToS Defender</span></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">The problem</p>
+  <h2>Nobody reads what they agree to</h2>
+  <p class="lede">The goal is a single glance at the moment of consent: a shield next to every policy link, colored by how the document treats you, opening a short explanation on click.</p>
+  <div class="row grow" style="align-items:center">
+    <div class="col">
+      <div class="card" style="padding:28px 30px;box-shadow:0 10px 30px rgba(15,23,42,.08)">
+        <div style="font-size:22px;font-weight:700;margin-bottom:16px">Create your account</div>
+        <div style="border:1px solid #cbd3e0;border-radius:8px;padding:10px;color:#97a0b3;margin-bottom:18px">you@example.com</div>
+        <div style="font-size:17px;line-height:1.9">
+          <span style="display:inline-block;width:16px;height:16px;border:1.5px solid #64748b;border-radius:3px;vertical-align:-2px;margin-right:6px"></span>I agree to the <u style="color:#2357d8">Terms of Service</u>
+          <svg width="20" height="20" style="vertical-align:-4px"><use href="#shield-warning"/></svg>
+          and the <u style="color:#2357d8">Privacy Policy</u>
+          <svg width="20" height="20" style="vertical-align:-4px"><use href="#shield-caution"/></svg>
+        </div>
+        <div style="margin-top:18px;display:inline-block;background:#0f172a;color:#fff;border-radius:8px;padding:9px 18px;font-weight:600">Sign up</div>
+      </div>
+    </div>
+    <div class="col" style="display:grid;gap:14px">
+      <div class="step"><div class="num">1</div><div><b>Find</b> — which links on this page lead to legal documents?</div></div>
+      <div class="step"><div class="num">2</div><div><b>Read</b> — fetch each document and pull out the points that matter.</div></div>
+      <div class="step"><div class="num">3</div><div><b>Prove</b> — every point must quote the document exactly and pass a support check.</div></div>
+      <div class="step"><div class="num">4</div><div><b>Judge</b> — rate each point's impact on the person accepting it.</div></div>
+      <div class="step"><div class="num">5</div><div><b>Show</b> — a colored shield beside the link, a plain-language panel on click.</div></div>
+    </div>
+  </div>
+  <div class="footer"><span>Overview</span><span>2</span></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">Architecture</p>
+  <h2>Four browser pieces, one API, two AI providers</h2>
+  <p class="lede">The extension never calls an AI provider directly. Everything goes through the local FastAPI server, which owns prompts, keys, and evidence checks.</p>
+  <svg class="grow" viewBox="0 0 1140 470" width="100%">
+    <rect x="4" y="6" width="660" height="458" rx="18" fill="#f4f6fb"/>
+    <text x="26" y="36" font-size="15" font-weight="700" fill="#5b6678">BROWSER · Manifest V3</text>
+    <rect x="30" y="60" width="260" height="112" rx="14" fill="#fff" stroke="#c9d0f5" stroke-width="1.5"/>
+    <text x="50" y="92" font-size="17" font-weight="700" fill="#172033">Toolbar popup</text>
+    <text x="50" y="114" font-size="13" fill="#5b6678">popup.js</text>
+    <text x="50" y="138" font-size="13.5" fill="#3c4659">Asks for site access, starts a run,</text>
+    <text x="50" y="157" font-size="13.5" fill="#3c4659">lists documents · “Show on page”</text>
+    <rect x="30" y="268" width="260" height="170" rx="14" fill="#fff" stroke="#3b4fd8" stroke-width="2"/>
+    <text x="50" y="300" font-size="17" font-weight="700" fill="#172033">Content script</text>
+    <text x="50" y="322" font-size="13" fill="#5b6678">src/content.js · runs in the page</text>
+    <text x="50" y="348" font-size="13.5" fill="#3c4659">• discovers same-origin links</text>
+    <text x="50" y="370" font-size="13.5" fill="#3c4659">• fetches + extracts policy text</text>
+    <text x="50" y="392" font-size="13.5" fill="#3c4659">• draws shields and the panel</text>
+    <text x="50" y="414" font-size="13.5" fill="#3c4659">• tracks per-link state</text>
+    <rect x="380" y="150" width="260" height="140" rx="14" fill="#fff" stroke="#c9d0f5" stroke-width="1.5"/>
+    <text x="400" y="182" font-size="17" font-weight="700" fill="#172033">Service worker</text>
+    <text x="400" y="204" font-size="13" fill="#5b6678">src/service-worker.js</text>
+    <text x="400" y="230" font-size="13.5" fill="#3c4659">• calls the API</text>
+    <text x="400" y="252" font-size="13.5" fill="#3c4659">• reads the SSE stream</text>
+    <text x="400" y="274" font-size="13.5" fill="#3c4659">• persists status per tab</text>
+    <rect x="380" y="352" width="260" height="76" rx="14" fill="#fff" stroke="#c9d0f5" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <text x="400" y="384" font-size="15" font-weight="700" fill="#172033">chrome.storage.local</text>
+    <text x="400" y="406" font-size="13" fill="#5b6678" class="mono">review:{tabId} → status</text>
+    <rect x="720" y="6" width="416" height="458" rx="18" fill="#eef1fe"/>
+    <text x="742" y="36" font-size="15" font-weight="700" fill="#3b4fd8">API · FastAPI on localhost:8000</text>
+    <rect x="744" y="60" width="368" height="78" rx="14" fill="#fff" stroke="#3b4fd8" stroke-width="1.5"/>
+    <text x="764" y="92" font-size="15" font-weight="700" fill="#172033" class="mono">POST /api/extension/classify-anchors</text>
+    <text x="764" y="116" font-size="13.5" fill="#3c4659">Which links are legal documents? (JSON)</text>
+    <rect x="744" y="166" width="368" height="78" rx="14" fill="#fff" stroke="#3b4fd8" stroke-width="1.5"/>
+    <text x="764" y="198" font-size="15" font-weight="700" fill="#172033" class="mono">POST /api/analyze/staged</text>
+    <text x="764" y="222" font-size="13.5" fill="#3c4659">initial → full findings (event stream)</text>
+    <rect x="744" y="300" width="172" height="130" rx="14" fill="#fff" stroke="#15803d" stroke-width="1.5"/>
+    <text x="762" y="330" font-size="16" font-weight="700" fill="#15803d">TypeSafe Jev</text>
+    <text x="762" y="354" font-size="12.5" fill="#3c4659">fast typed judgments</text>
+    <text x="762" y="376" font-size="12.5" fill="#3c4659">• link classification</text>
+    <text x="762" y="396" font-size="12.5" fill="#3c4659">• claim support</text>
+    <text x="762" y="416" font-size="12.5" fill="#3c4659">• impact scores</text>
+    <rect x="940" y="300" width="172" height="130" rx="14" fill="#fff" stroke="#c26a04" stroke-width="1.5"/>
+    <text x="958" y="330" font-size="16" font-weight="700" fill="#c26a04">OpenRouter</text>
+    <text x="958" y="354" font-size="12.5" fill="#3c4659">generative LLMs</text>
+    <text x="958" y="376" font-size="12.5" fill="#3c4659">• fast scan</text>
+    <text x="958" y="396" font-size="12.5" fill="#3c4659">• full passage review</text>
+    <text x="958" y="416" font-size="12.5" fill="#3c4659">• Q&amp;A</text>
+    <path d="M160 172 V262" stroke="#7b86a8" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+    <text x="170" y="222" font-size="12.5" fill="#5b6678">start · open-panel</text>
+    <path d="M290 300 C330 300 340 230 374 225" stroke="#3b4fd8" stroke-width="2" fill="none" marker-end="url(#arrow-brand)"/>
+    <text x="296" y="262" font-size="12.5" fill="#3b4fd8">classify · analyze</text>
+    <path d="M380 262 C340 300 330 360 296 370" stroke="#7b86a8" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+    <text x="300" y="350" font-size="12.5" fill="#5b6678">analysis-event</text>
+    <path d="M290 410 C330 420 350 392 374 390" stroke="#7b86a8" stroke-width="2" fill="none" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
+    <text x="296" y="436" font-size="12.5" fill="#5b6678">progress</text>
+    <path d="M640 390 H652 V112 H296" stroke="#7b86a8" stroke-width="2" fill="none" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
+    <text x="470" y="104" font-size="12.5" fill="#5b6678">onChanged → popup re-renders</text>
+    <path d="M640 190 C690 170 700 105 738 100" stroke="#3b4fd8" stroke-width="2" fill="none" marker-end="url(#arrow-brand)"/>
+    <path d="M640 230 C690 225 700 205 738 205" stroke="#3b4fd8" stroke-width="2" fill="none" marker-end="url(#arrow-brand)"/>
+    <path d="M756 138 C716 180 716 262 790 294" stroke="#15803d" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+    <path d="M900 244 V294" stroke="#15803d" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+    <path d="M1000 244 C1010 270 1020 280 1024 294" stroke="#c26a04" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  </svg>
+  <div class="footer"><span>Architecture</span><span>3</span></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">End-to-end run</p>
+  <h2>What happens after “Check this page's terms”</h2>
+  <p class="lede">The current page is checked first. Links are classified in one batch, and only the ones judged to be legal documents are fetched and analyzed, three at a time.</p>
+  <svg class="grow" viewBox="0 0 1140 440" width="100%">
+    <g font-size="14" font-weight="700" fill="#172033">
+      <text x="60" y="24" text-anchor="middle">Popup</text>
+      <text x="300" y="24" text-anchor="middle">Content script</text>
+      <text x="560" y="24" text-anchor="middle">Service worker</text>
+      <text x="820" y="24" text-anchor="middle">API</text>
+      <text x="1060" y="24" text-anchor="middle">Jev · LLMs</text>
+    </g>
+    <g stroke="#dfe3ec" stroke-width="2"><path d="M60 36V430"/><path d="M300 36V430"/><path d="M560 36V430"/><path d="M820 36V430"/><path d="M1060 36V430"/></g>
+    <g font-size="12.5" fill="#3c4659">
+      <path d="M60 60H294" stroke="#3b4fd8" stroke-width="2" marker-end="url(#arrow-brand)"/><text x="72" y="54">① permission + inject + start</text>
+      <path d="M300 96H554" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/><text x="312" y="90">② classify [current page]</text>
+      <path d="M560 112H814" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/><text x="572" y="106">classify-anchors</text>
+      <path d="M820 128H1054" stroke="#15803d" stroke-width="2" marker-end="url(#arrow)"/><text x="832" y="122">1 Noul + 1 Choice per link</text>
+      <rect x="236" y="148" width="128" height="30" rx="8" fill="#eef1fe"/><text x="300" y="168" text-anchor="middle" font-weight="600" fill="#3b4fd8">③ scan ≤ 80 links</text>
+      <path d="M300 200H554" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/><text x="312" y="194">④ classify [all links, one batch]</text>
+      <path d="M560 216H814" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/>
+      <path d="M820 232H1054" stroke="#15803d" stroke-width="2" marker-end="url(#arrow)"/><text x="832" y="226">2 × N questions, parallel</text>
+      <rect x="226" y="250" width="148" height="30" rx="8" fill="#eef1fe"/><text x="300" y="270" text-anchor="middle" font-weight="600" fill="#3b4fd8">⑤ fetch policy HTML</text>
+      <path d="M300 300H554" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/><text x="312" y="294">⑥ analyze(url, text)</text>
+      <path d="M560 316H814" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/><text x="572" y="310">analyze/staged (SSE)</text>
+      <path d="M820 332H1054" stroke="#c26a04" stroke-width="2" marker-end="url(#arrow)"/><text x="832" y="326">fast scan · full review · checks</text>
+      <path d="M814 354H566" stroke="#7b86a8" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrow)"/><text x="640" y="348">event: initial</text>
+      <path d="M554 370H306" stroke="#7b86a8" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrow)"/><text x="384" y="364">⑦ provisional shield</text>
+      <path d="M814 394H566" stroke="#7b86a8" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrow)"/><text x="640" y="388">event: full · done</text>
+      <path d="M554 410H306" stroke="#7b86a8" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrow)"/><text x="384" y="404">⑧ verified shield</text>
+      <path d="M294 426H66" stroke="#7b86a8" stroke-width="2" stroke-dasharray="2 4" marker-end="url(#arrow)"/><text x="100" y="420">status via storage</text>
+    </g>
+  </svg>
+  <div class="footer"><span>Sequence</span><span>4</span></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">Step 1 · Link discovery</p>
+  <h2>Turning the page into a candidate list</h2>
+  <p class="lede">The content script reads every anchor and keeps only links worth asking about. Labels and URLs are all Jev ever sees at this stage. No page content is sent.</p>
+  <div class="row grow">
+    <svg viewBox="0 0 560 420" width="560" style="flex:none">
+      <g font-size="14">
+        <rect x="10" y="10" width="540" height="56" rx="12" fill="#f4f6fb"/><text x="30" y="44" fill="#172033" font-weight="700">document.querySelectorAll("a[href]")</text><text x="470" y="44" fill="#5b6678">≈ all</text>
+        <path d="M280 66 V86" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="40" y="92" width="480" height="48" rx="12" fill="#fff" stroke="#dfe3ec"/><text x="60" y="122" fill="#3c4659">Normalize URL · strip <tspan class="mono">#fragment</tspan></text>
+        <path d="M280 140 V160" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="70" y="166" width="420" height="48" rx="12" fill="#fff" stroke="#dfe3ec"/><text x="90" y="196" fill="#3c4659">Same origin only · not the current page</text>
+        <path d="M280 214 V234" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="100" y="240" width="360" height="48" rx="12" fill="#fff" stroke="#dfe3ec"/><text x="120" y="270" fill="#3c4659">Deduplicate by URL</text>
+        <path d="M280 288 V308" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="130" y="314" width="300" height="48" rx="12" fill="#fff" stroke="#dfe3ec"/><text x="150" y="344" fill="#3c4659">Cap at 80 · URL ≤ 4000 chars</text>
+        <path d="M280 362 V382" stroke="#3b4fd8" stroke-width="2" marker-end="url(#arrow-brand)"/>
+        <rect x="160" y="386" width="240" height="32" rx="10" fill="#3b4fd8"/><text x="280" y="407" fill="#fff" font-weight="700" text-anchor="middle">{ id, label, url }[ ]</text>
+      </g>
+    </svg>
+    <div class="col" style="display:grid;gap:14px;align-content:start">
+      <div class="card soft"><h3>Current page goes first</h3><p>If the page you're on is itself a policy, its own text is read from the DOM and analyzed. A small corner pill opens its summary.</p></div>
+      <div class="card soft"><h3>Dynamic pages</h3><p>A <code>MutationObserver</code> notices new links after load and schedules another pass, debounced at 250 ms. It ignores the extension's own nodes.</p></div>
+      <div class="card soft"><h3>Every run is isolated</h3><p>Each run gets a <code>runId</code>. Late responses from an older run are dropped, so restarting never mixes results.</p></div>
+    </div>
+  </div>
+  <div class="footer"><span>Discovery</span><span>5</span></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">Step 2 · Classification with Jev</p>
+  <h2>One yes/no question per link, all in parallel</h2>
+  <p class="lede">Jev never sees question IDs. The first version asked the same question N times about the whole list, so every link "contained" the privacy policy. Now each question carries its own link.</p>
+  <div class="row grow">
+    <div class="col" style="display:flex;flex-direction:column;gap:10px">
+      <div><span class="tag" style="background:#fdeeee;color:#b91c1c">Before · every link ≈ 95% policy</span></div>
+<pre><span class="k">state</span>: { <span class="n">anchors</span>: [ …all 51 links… ] }
+<span class="k">questions</span>:
+  <span class="n">anchor_0</span>:  Choice(<span class="s">"Is this link likely a policy?"</span>)
+  <span class="n">anchor_1</span>:  Choice(<span class="s">"Is this link likely a policy?"</span>)
+  …          <span class="c">identical · no link reference</span></pre>
+      <div><span class="tag" style="background:#eaf6ee;color:#166534">After · each question is self-contained</span></div>
+<pre><span class="k">state</span>: { <span class="n">task</span>: <span class="s">"Classify individual hyperlinks…"</span>,
+         <span class="n">website</span>: <span class="s">"www.langchain.com"</span> }
+<span class="k">questions</span>:
+  <span class="n">legal_i</span>: Noul(instructions={
+      <span class="n">link</span>: { label, url },
+      <span class="n">question</span>: <span class="s">"Is the destination of `link` itself
+        a legal or policy document…?"</span> },
+    criteria={ true: […], false: […] })
+  <span class="n">type_i</span>:  Choice(terms · privacy · billing · other)</pre>
+    </div>
+    <div class="col" style="display:flex;flex-direction:column;gap:12px">
+      <div class="card" style="flex:1">
+        <h3>Live results · threshold 0.7</h3>
+        <div class="bars" style="margin-top:10px">
+          <div class="bar"><span>Privacy Policy</span><div class="track"><div class="fill" style="width:99%;background:var(--brand)"></div></div><b>0.99</b></div>
+          <div class="bar"><span>Terms of Service</span><div class="track"><div class="fill" style="width:99%;background:var(--brand)"></div></div><b>0.99</b></div>
+          <div class="bar"><span>Refunds</span><div class="track"><div class="fill" style="width:99%;background:var(--brand)"></div></div><b>0.99</b></div>
+          <div class="bar"><span>Cookie settings</span><div class="track"><div class="fill" style="width:98%;background:var(--brand)"></div></div><b>0.98</b></div>
+          <div class="bar"><span>Security</span><div class="track"><div class="fill" style="width:42%;background:#a5b0d9"></div></div><b>0.42</b></div>
+          <div class="bar"><span>Trust Center</span><div class="track"><div class="fill" style="width:29%;background:#a5b0d9"></div></div><b>0.29</b></div>
+          <div class="bar"><span>Pricing</span><div class="track"><div class="fill" style="width:2%;background:#a5b0d9"></div></div><b>0.02</b></div>
+          <div class="bar"><span>Join the community</span><div class="track"><div class="fill" style="width:2%;background:#a5b0d9"></div></div><b>0.02</b></div>
+          <div class="bar"><span>Sign in</span><div class="track"><div class="fill" style="width:1%;background:#a5b0d9"></div></div><b>0.01</b></div>
+        </div>
+      </div>
+      <div class="card soft"><p><b>Why Noul:</b> its answer is a probability of “yes”, so the threshold lives in code. The <b>Choice</b> picks the policy type in the same request and replaces keyword guessing.</p></div>
+    </div>
+  </div>
+  <div class="footer"><span>apps/api/pipeline.py · classify_anchors</span><span>6</span></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">Step 3 · Reading the document</p>
+  <h2>From HTML to numbered passages</h2>
+  <p class="lede">Admitted links are fetched with the user's own session, and the page chrome is stripped away. The server then splits the text into passages with stable IDs, so every finding can point back to its source.</p>
+  <svg class="grow" viewBox="0 0 1140 380" width="100%">
+    <g font-size="14">
+      <rect x="0" y="40" width="210" height="250" rx="14" fill="#f4f6fb"/>
+      <text x="20" y="72" font-weight="700" fill="#172033">/privacy-policy</text>
+      <rect x="20" y="88" width="170" height="22" rx="5" fill="#d9deea"/><text x="30" y="104" font-size="11" fill="#5b6678">nav</text>
+      <rect x="20" y="118" width="170" height="120" rx="5" fill="#fff" stroke="#3b4fd8"/><text x="30" y="138" font-size="11" fill="#3b4fd8">main / article</text>
+      <g fill="#c9d0f5"><rect x="30" y="148" width="150" height="7" rx="3"/><rect x="30" y="162" width="130" height="7" rx="3"/><rect x="30" y="176" width="145" height="7" rx="3"/><rect x="30" y="196" width="120" height="7" rx="3"/><rect x="30" y="210" width="140" height="7" rx="3"/></g>
+      <rect x="20" y="246" width="170" height="22" rx="5" fill="#d9deea"/><text x="30" y="262" font-size="11" fill="#5b6678">footer · forms · scripts</text>
+      <path d="M216 165 H290" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/>
+      <text x="222" y="152" font-size="12" fill="#5b6678">fetch</text>
+      <text x="222" y="186" font-size="12" fill="#5b6678">DOMParser</text>
+      <rect x="296" y="90" width="230" height="150" rx="14" fill="#fff" stroke="#dfe3ec"/>
+      <text x="316" y="120" font-weight="700" fill="#172033">extractText()</text>
+      <text x="316" y="146" font-size="13" fill="#3c4659">• prefer main / article</text>
+      <text x="316" y="168" font-size="13" fill="#3c4659">• drop nav, header, footer,</text>
+      <text x="330" y="188" font-size="13" fill="#3c4659">forms, scripts, styles</text>
+      <text x="316" y="212" font-size="13" fill="#3c4659">• collapse whitespace</text>
+      <text x="316" y="232" font-size="13" fill="#3c4659">• ≤ 120,000 chars, ≥ 80</text>
+      <path d="M532 165 H606" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/>
+      <text x="540" y="152" font-size="12" fill="#5b6678">POST text</text>
+      <rect x="612" y="90" width="210" height="150" rx="14" fill="#fff" stroke="#3b4fd8" stroke-width="1.5"/>
+      <text x="632" y="120" font-weight="700" fill="#172033">segment_text()</text>
+      <text x="632" y="146" font-size="13" fill="#3c4659">split on paragraphs</text>
+      <text x="632" y="168" font-size="13" fill="#3c4659">≤ 1,400 chars each</text>
+      <text x="632" y="190" font-size="13" fill="#3c4659">keep original offsets</text>
+      <text x="632" y="212" font-size="13" fill="#3c4659">IDs P001, P002, …</text>
+      <path d="M828 165 H900" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/>
+      <g>
+        <rect x="906" y="40" width="234" height="58" rx="10" fill="#eef1fe"/><text x="920" y="64" font-weight="700" fill="#3b4fd8" class="mono">P001</text><text x="920" y="86" font-size="12" fill="#3c4659">“We collect information you…”</text>
+        <rect x="906" y="108" width="234" height="58" rx="10" fill="#eef1fe"/><text x="920" y="132" font-weight="700" fill="#3b4fd8" class="mono">P002</text><text x="920" y="154" font-size="12" fill="#3c4659">“We may share information…”</text>
+        <rect x="906" y="176" width="234" height="58" rx="10" fill="#eef1fe"/><text x="920" y="200" font-weight="700" fill="#3b4fd8" class="mono">P003</text><text x="920" y="222" font-size="12" fill="#3c4659">“Disputes will be resolved…”</text>
+        <text x="1023" y="262" font-size="20" fill="#7b86a8" text-anchor="middle">⋮</text>
+      </g>
+    </g>
+    <g font-size="13.5" fill="#3c4659">
+      <rect x="0" y="318" width="1140" height="54" rx="12" fill="#f4f6fb"/>
+      <text x="22" y="350"><tspan font-weight="700" fill="#172033">Concurrency:</tspan> 3 documents in flight from the content script · the service worker de-duplicates by tab + run + URL and aborts superseded runs.</text>
+    </g>
+  </svg>
+  <div class="footer"><span>content.js · extractText · apps/api/text.py</span><span>7</span></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">Step 4 · Staged analysis</p>
+  <h2>Fast answer first, verified answer second</h2>
+  <p class="lede">One streaming request. A quick scan of the most relevant passages produces a provisional shield in seconds. The stream then stays open while the full review reads every passage and checks each claim.</p>
+  <svg class="grow" viewBox="0 0 1140 380" width="100%">
+    <g font-size="13">
+      <text x="0" y="24" font-size="12" fill="#97a0b3">time →</text>
+      <path d="M50 30 H1130" stroke="#dfe3ec" stroke-width="2"/>
+      <text x="0" y="78" font-weight="700" fill="#172033">Fast scan</text>
+      <rect x="110" y="56" width="150" height="38" rx="9" fill="#fdf3e4" stroke="#c26a04"/><text x="185" y="80" text-anchor="middle" fill="#7a4300">BM25 pick ≤ 12</text>
+      <rect x="266" y="56" width="200" height="38" rx="9" fill="#fdf3e4" stroke="#c26a04"/><text x="366" y="80" text-anchor="middle" fill="#7a4300">flash LLM · ≤ 5 findings</text>
+      <rect x="472" y="56" width="110" height="38" rx="9" fill="#eaf6ee" stroke="#15803d"/><text x="527" y="80" text-anchor="middle" fill="#14532d">Jev impact</text>
+      <path d="M592 75 H630" stroke="#3b4fd8" stroke-width="2" marker-end="url(#arrow-brand)"/>
+      <rect x="636" y="54" width="130" height="42" rx="21" fill="#3b4fd8"/><text x="701" y="80" text-anchor="middle" fill="#fff" font-weight="700">event: initial</text>
+      <text x="0" y="168" font-weight="700" fill="#172033">Full review</text>
+      <text x="0" y="186" font-size="11.5" fill="#5b6678">starts once</text>
+      <text x="0" y="201" font-size="11.5" fill="#5b6678">initial is sent</text>
+      <path d="M701 98 C701 112 120 108 112 124" stroke="#3b4fd8" stroke-width="1.5" stroke-dasharray="4 4" fill="none" marker-end="url(#arrow-brand)"/>
+      <rect x="110" y="128" width="300" height="34" rx="9" fill="#eaf6ee" stroke="#15803d"/><text x="260" y="150" text-anchor="middle" fill="#14532d">Jev Choice · document type</text>
+      <g fill="#fdf3e4" stroke="#c26a04">
+        <rect x="110" y="170" width="300" height="24" rx="7"/><rect x="110" y="198" width="300" height="24" rx="7"/><rect x="110" y="226" width="300" height="24" rx="7"/><rect x="110" y="254" width="300" height="24" rx="7"/>
+      </g>
+      <text x="260" y="187" text-anchor="middle" fill="#7a4300">batch 1 · 12 passages</text>
+      <text x="260" y="215" text-anchor="middle" fill="#7a4300">batch 2</text>
+      <text x="260" y="243" text-anchor="middle" fill="#7a4300">batch 3</text>
+      <text x="260" y="271" text-anchor="middle" fill="#7a4300">batch 4 · ≤ 4 in parallel</text>
+      <rect x="420" y="190" width="150" height="40" rx="9" fill="#fff" stroke="#3b4fd8"/><text x="495" y="215" text-anchor="middle" fill="#3b4fd8">exact-quote check</text>
+      <rect x="580" y="190" width="170" height="40" rx="9" fill="#eaf6ee" stroke="#15803d"/><text x="665" y="215" text-anchor="middle" fill="#14532d">Jev claim support</text>
+      <rect x="760" y="190" width="120" height="40" rx="9" fill="#eaf6ee" stroke="#15803d"/><text x="820" y="215" text-anchor="middle" fill="#14532d">Jev impact</text>
+      <path d="M886 210 H930" stroke="#3b4fd8" stroke-width="2" marker-end="url(#arrow-brand)"/>
+      <rect x="936" y="188" width="120" height="44" rx="22" fill="#3b4fd8"/><text x="996" y="215" text-anchor="middle" fill="#fff" font-weight="700">event: full</text>
+      <path d="M1060 210 H1090" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/><text x="1098" y="215" fill="#5b6678">done</text>
+    </g>
+    <g font-size="13">
+      <rect x="0" y="300" width="360" height="72" rx="12" fill="#fdf3e4"/><text x="18" y="328" font-weight="700" fill="#7a4300">OpenRouter · generative</text><text x="18" y="352" fill="#3c4659">reads text, drafts findings with quotes</text>
+      <rect x="390" y="300" width="360" height="72" rx="12" fill="#eaf6ee"/><text x="408" y="328" font-weight="700" fill="#14532d">Jev · judgment</text><text x="408" y="352" fill="#3c4659">typed answers that code can threshold</text>
+      <rect x="780" y="300" width="360" height="72" rx="12" fill="#eef1fe"/><text x="798" y="328" font-weight="700" fill="#3b4fd8">Deterministic code</text><text x="798" y="352" fill="#3c4659">quote matching, merging, rating rollup</text>
+    </g>
+  </svg>
+  <div class="footer"><span>server.py · analyze_staged · pipeline.analyze_fast / analyze</span><span>8</span></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">Step 5 · Evidence guards</p>
+  <h2>A finding must survive three filters</h2>
+  <p class="lede">The LLM may draft anything. Only points that quote the document exactly, stay concise, and are judged as supported by the quoted passage reach the user.</p>
+  <svg class="grow" viewBox="0 0 1140 360" width="100%">
+    <g font-size="14">
+      <path d="M20 40 H1120 L940 320 H200 Z" fill="#f4f6fb"/>
+      <text x="80" y="30" fill="#5b6678" font-size="13">every drafted finding</text>
+      <rect x="70" y="60" width="300" height="200" rx="14" fill="#fff" stroke="#3b4fd8" stroke-width="1.5"/>
+      <text x="90" y="92" font-weight="700" fill="#172033">① Exact quote</text>
+      <text x="90" y="120" font-size="13" fill="#3c4659">excerpt must appear verbatim in</text>
+      <text x="90" y="140" font-size="13" fill="#3c4659">its passage <tspan font-weight="700">and</tspan> the full document</text>
+      <text x="90" y="166" font-size="13" fill="#3c4659">(quotes and whitespace normalized)</text>
+      <text x="90" y="198" font-size="13" fill="#5b6678" class="mono">find_exact_excerpt()</text>
+      <text x="90" y="236" font-size="13" fill="#b91c1c">✕ paraphrased or invented quotes</text>
+      <rect x="420" y="60" width="300" height="200" rx="14" fill="#fff" stroke="#3b4fd8" stroke-width="1.5"/>
+      <text x="440" y="92" font-weight="700" fill="#172033">② Concise &amp; explanatory</text>
+      <text x="440" y="120" font-size="13" fill="#3c4659">explanation ≤ 20 words</text>
+      <text x="440" y="140" font-size="13" fill="#3c4659">implication ≤ 14 words</text>
+      <text x="440" y="160" font-size="13" fill="#3c4659">both shorter than the quote</text>
+      <text x="440" y="198" font-size="13" fill="#5b6678" class="mono">DraftFinding.is_concise()</text>
+      <text x="440" y="236" font-size="13" fill="#b91c1c">✕ restating the fine print at length</text>
+      <rect x="770" y="60" width="300" height="200" rx="14" fill="#fff" stroke="#15803d" stroke-width="1.5"/>
+      <text x="790" y="92" font-weight="700" fill="#172033">③ Supported claim</text>
+      <text x="790" y="120" font-size="13" fill="#3c4659">Jev Choice per finding:</text>
+      <text x="790" y="140" font-size="13" fill="#3c4659">supports · contradicts · says nothing</text>
+      <text x="790" y="160" font-size="13" fill="#3c4659">keep only “supports” ≥ 0.8 confidence</text>
+      <text x="790" y="198" font-size="13" fill="#5b6678" class="mono">verify_claims() · top 24</text>
+      <text x="790" y="236" font-size="13" fill="#b91c1c">✕ quote real, claim overstated</text>
+      <path d="M370 160 H414" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/>
+      <path d="M720 160 H764" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/>
+      <rect x="440" y="282" width="260" height="40" rx="20" fill="#3b4fd8"/><text x="570" y="308" text-anchor="middle" fill="#fff" font-weight="700">what the user sees</text>
+    </g>
+  </svg>
+  <div class="footer"><span>pipeline.py · _verified_citation · verify_claims</span><span>9</span></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">Step 6 · Impact rating</p>
+  <h2>How each point affects the person accepting it</h2>
+  <p class="lede">One Jev request with one Score question per finding, on a four-level rubric. Code buckets the expected score and rolls the worst level up into the shield color.</p>
+  <svg viewBox="0 0 1140 230" width="100%" style="flex:none">
+    <defs><linearGradient id="scale" x1="0" x2="1"><stop offset="0" stop-color="#15803d"/><stop offset=".33" stop-color="#94a3b8"/><stop offset=".62" stop-color="#c26a04"/><stop offset="1" stop-color="#dc2626"/></linearGradient></defs>
+    <rect x="40" y="96" width="1060" height="18" rx="9" fill="url(#scale)"/>
+    <g font-size="13" fill="#5b6678" text-anchor="middle">
+      <text x="40" y="140">0</text><text x="393" y="140">1</text><text x="747" y="140">2</text><text x="1100" y="140">3</text>
+    </g>
+    <g stroke="#172033" stroke-width="2"><path d="M305 86V124"/><path d="M570 86V124"/><path d="M853 86V124"/></g>
+    <g font-size="12" fill="#172033" text-anchor="middle" font-weight="700"><text x="305" y="80">0.75</text><text x="570" y="80">1.5</text><text x="853" y="80">2.3</text></g>
+    <g font-size="14" font-weight="700" text-anchor="middle">
+      <text x="172" y="176" fill="#15803d">In your favor</text><text x="437" y="176" fill="#5b6678">Routine</text><text x="711" y="176" fill="#c26a04">Worth checking</text><text x="976" y="176" fill="#dc2626">Important</text>
+    </g>
+    <g font-size="12" fill="#3c4659">
+      <circle cx="44" cy="105" r="7" fill="#fff" stroke="#172033" stroke-width="2"/><text x="44" y="40" text-anchor="start">delete your data · 0.01</text><path d="M44 46V96" stroke="#97a0b3" stroke-dasharray="3 3"/>
+      <circle cx="415" cy="105" r="7" fill="#fff" stroke="#172033" stroke-width="2"/><text x="360" y="40">cookies keep you signed in · 1.06</text><path d="M415 46V96" stroke="#97a0b3" stroke-dasharray="3 3"/>
+      <circle cx="754" cy="105" r="7" fill="#fff" stroke="#172033" stroke-width="2"/><text x="640" y="40">ad partners get activity · 2.02</text><path d="M754 46V96" stroke="#97a0b3" stroke-dasharray="3 3"/>
+      <circle cx="1096" cy="105" r="7" fill="#fff" stroke="#172033" stroke-width="2"/><text x="1100" y="40" text-anchor="end">binding arbitration · 3.00</text><path d="M1096 46V96" stroke="#97a0b3" stroke-dasharray="3 3"/>
+    </g>
+    <g font-size="12" fill="#5b6678" text-anchor="middle"><text x="172" y="200">gives you a right or choice</text><text x="437" y="200">expected, costs nothing</text><text x="711" y="200">unexpected, modest impact</text><text x="976" y="200">money, rights, or control</text></g>
+  </svg>
+  <div class="row grow" style="margin-top:14px;align-items:stretch">
+    <div class="card" style="flex:1.1">
+      <h3>Rollup → shield</h3>
+      <div style="display:grid;gap:9px;margin-top:10px;font-size:14px">
+        <div style="display:flex;gap:10px;align-items:center"><svg width="22" height="22"><use href="#shield-warning"/></svg> any <b>Important</b> → “Read before you accept”</div>
+        <div style="display:flex;gap:10px;align-items:center"><svg width="22" height="22"><use href="#shield-caution"/></svg> else any <b>Worth checking</b> → “Some terms worth checking”</div>
+        <div style="display:flex;gap:10px;align-items:center"><svg width="22" height="22"><use href="#shield-clear"/></svg> else rated findings → “No major concerns found”</div>
+        <div style="display:flex;gap:10px;align-items:center"><svg width="22" height="22"><use href="#shield-brand"/></svg> nothing rated → “No notable terms verified”</div>
+      </div>
+    </div>
+    <div class="col">
+<pre><span class="k">Score</span>(instructions={
+  <span class="n">finding</span>: { summary, consequence, quote },
+  <span class="n">question</span>: <span class="s">"How does `finding` affect the person
+    who accepts this document…?"</span> },
+  criteria=[favor, routine, worth checking, important])
+<span class="c">Analysis.rating is a computed field · rating failures
+leave findings intact and the shield unrated</span></pre>
+    </div>
+  </div>
+  <div class="footer"><span>pipeline.rate_findings · schemas.Analysis.rating</span><span>10</span></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">Step 7 · On-page UI</p>
+  <h2>Shield badge and explanation panel</h2>
+  <p class="lede">Both live in closed Shadow DOM, so page CSS can't break them and they can't restyle the page. Only links classified as policies get a badge.</p>
+  <div class="row grow" style="position:relative">
+    <div style="width:360px;flex:none;display:grid;gap:12px;align-content:start">
+      <div class="card soft">
+        <h3>Badge states</h3>
+        <div style="display:grid;gap:8px;margin-top:8px;font-size:13.5px">
+          <div style="display:flex;gap:10px;align-items:center"><svg width="22" height="22"><use href="#shield-pending"/></svg> reading · pulses</div>
+          <div style="display:flex;gap:10px;align-items:center"><svg width="22" height="22"><use href="#shield-warning"/></svg> provisional color pulses until “full”</div>
+          <div style="display:flex;gap:10px;align-items:center"><svg width="22" height="22"><use href="#shield-clear"/></svg> verified · steady</div>
+          <div style="display:flex;gap:10px;align-items:center"><svg width="22" height="22"><use href="#shield-error"/></svg> couldn't read the document</div>
+        </div>
+      </div>
+      <div class="card soft">
+        <h3>Safe inside consent forms</h3>
+        <p>The badge sits <i>after</i> the link and cancels its own click, so it never ticks the “I agree” checkbox or follows the link.</p>
+      </div>
+      <div class="card soft">
+        <h3>Accessible</h3>
+        <p>Real <code>&lt;button&gt;</code> with <code>aria-expanded</code> · dialog panel takes focus · Escape returns focus · respects reduced motion.</p>
+      </div>
+    </div>
+    <div style="flex:1;position:relative">
+      <div class="mock-panel" style="position:absolute;left:300px;top:4px">
+        <header><svg width="22" height="22"><use href="#shield-brand"/></svg><div style="flex:1"><b style="font-size:14px">Terms of Service</b><div style="color:#5b6678;font-size:10.5px">Terms of service · example.com/terms</div></div><span style="color:#5b6678;font-size:16px">×</span></header>
+        <div class="verdict"><svg width="18" height="18"><use href="#shield-warning"/></svg><div><b>Read before you accept</b><div style="font-size:11px;color:#3c4659">2 points could cost you money, rights, or control.</div></div></div>
+        <div class="item"><div class="lvl"><span class="dot" style="background:#dc2626"></span>IMPORTANT</div><div style="font-weight:600;margin-top:3px">Disputes go to binding arbitration instead of court.</div><div style="color:#3c4659;margin-top:3px"><b>What it means for you:</b> you cannot sue or join a class action.</div><div style="color:#3b4fd8;font-size:11px;margin-top:4px">▸ What the document says</div></div>
+        <div class="item"><div class="lvl"><span class="dot" style="background:#15803d"></span>IN YOUR FAVOR</div><div style="font-weight:600;margin-top:3px">You can cancel any time in settings.</div></div>
+        <footer><span>AI summary · not legal advice</span><span style="color:#3b4fd8;font-weight:600">Open document ↗</span></footer>
+      </div>
+      <div class="callout left" style="left:0;top:22px"><b>Header</b> — document name, type, and URL</div>
+      <div class="callout left" style="left:0;top:92px"><b>Verdict</b> — the rollup rating in one sentence</div>
+      <div class="callout left" style="left:0;top:172px"><b>Points</b> — sorted by impact, with plain explanation and consequence</div>
+      <div class="callout left" style="left:0;top:252px"><b>Evidence</b> — the exact quote, collapsed by default</div>
+      <div class="callout left" style="left:0;top:340px"><b>Scrollable body</b> — max ~480 px, positioned above or below the badge, follows scroll</div>
+    </div>
+  </div>
+  <div class="footer"><span>content.js · badgeFor · renderPanel</span><span>11</span></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">Messaging &amp; state</p>
+  <h2>Who tells whom what</h2>
+  <p class="lede">All runtime messages carry a <code>runId</code>. The content script is the single source of truth and publishes a status snapshot. The service worker persists it, and the popup renders it.</p>
+  <div class="row grow">
+    <div class="col" style="flex:1.4">
+      <table>
+        <thead><tr><th>Message</th><th>From → To</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">start</td><td>popup → content</td><td>reset UI and state, begin a new run</td></tr>
+          <tr><td class="mono">open-panel</td><td>popup → content</td><td>scroll to the link and open its panel</td></tr>
+          <tr><td class="mono">classify</td><td>content → worker</td><td>batch of <code>{id,label,url}</code> → classifications</td></tr>
+          <tr><td class="mono">analyze</td><td>content → worker</td><td>start the staged stream for one document</td></tr>
+          <tr><td class="mono">analysis-progress</td><td>worker → content</td><td>fast scan / full review started</td></tr>
+          <tr><td class="mono">analysis-event</td><td>worker → content</td><td><code>initial</code> · <code>full</code> · <code>error</code> payloads</td></tr>
+          <tr><td class="mono">progress</td><td>content → worker</td><td>status snapshot → <code>storage[review:tabId]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="col">
+      <svg viewBox="0 0 420 380" width="100%">
+        <g font-size="13">
+          <text x="0" y="18" font-weight="700" fill="#172033">Per-document state</text>
+          <rect x="0" y="36" width="120" height="40" rx="10" fill="#f4f6fb"/><text x="60" y="61" text-anchor="middle" fill="#3c4659">pending</text>
+          <path d="M120 56 H150" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/>
+          <rect x="154" y="36" width="120" height="40" rx="10" fill="#f4f6fb"/><text x="214" y="61" text-anchor="middle" fill="#3c4659">likely-policy</text>
+          <path d="M60 76 V104" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/>
+          <rect x="0" y="108" width="120" height="40" rx="10" fill="#fff" stroke="#dfe3ec"/><text x="60" y="133" text-anchor="middle" fill="#97a0b3">not-policy · no UI</text>
+          <path d="M214 76 V104" stroke="#3b4fd8" stroke-width="2" marker-end="url(#arrow-brand)"/>
+          <g fill="#eef1fe">
+            <rect x="154" y="108" width="120" height="34" rx="9"/><rect x="154" y="152" width="120" height="34" rx="9"/><rect x="154" y="196" width="120" height="34" rx="9"/>
+          </g>
+          <text x="214" y="130" text-anchor="middle" fill="#3b4fd8">queued</text>
+          <text x="214" y="174" text-anchor="middle" fill="#3b4fd8">fetching</text>
+          <text x="214" y="218" text-anchor="middle" fill="#3b4fd8">analyzing</text>
+          <path d="M214 142 V150" stroke="#3b4fd8" stroke-width="2"/><path d="M214 186 V194" stroke="#3b4fd8" stroke-width="2"/>
+          <path d="M214 230 V258" stroke="#3b4fd8" stroke-width="2" marker-end="url(#arrow-brand)"/>
+          <rect x="154" y="262" width="120" height="40" rx="10" fill="#eaf6ee"/><text x="214" y="287" text-anchor="middle" fill="#14532d">succeeded</text>
+          <path d="M274 213 C320 213 330 260 330 280" stroke="#b91c1c" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+          <rect x="290" y="284" width="110" height="40" rx="10" fill="#fdeeee"/><text x="345" y="309" text-anchor="middle" fill="#b91c1c">failed</text>
+          <text x="0" y="350" fill="#5b6678">+ analysis: { event, rating, findings[] }</text>
+          <text x="0" y="372" fill="#5b6678">  attached on initial, replaced on full</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div class="footer"><span>content.js · service-worker.js · popup.js</span><span>12</span></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">Operations</p>
+  <h2>Observability, privacy, and safety</h2>
+  <p class="lede">Every hop is logged with correlation IDs, without logging policy text. Access is requested per site, and nothing from the page is ever rendered as HTML.</p>
+  <div class="row grow">
+    <div class="col">
+      <div class="card" style="height:100%">
+        <h3>Correlated logs</h3>
+        <svg viewBox="0 0 330 250" width="100%" style="margin-top:6px">
+          <g font-size="12">
+            <rect x="0" y="10" width="330" height="54" rx="10" fill="#f4f6fb"/><text x="12" y="32" font-weight="700" fill="#172033">browser console</text><text x="12" y="52" fill="#5b6678" class="mono">tos_decipher_event {runId}</text>
+            <path d="M165 64 V90" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/><text x="174" y="82" fill="#5b6678" class="mono">correlation_id</text>
+            <rect x="0" y="94" width="330" height="54" rx="10" fill="#f4f6fb"/><text x="12" y="116" font-weight="700" fill="#172033">API logs</text><text x="12" y="136" fill="#5b6678" class="mono">policy_staged_stage_completed</text>
+            <path d="M165 148 V174" stroke="#7b86a8" stroke-width="2" marker-end="url(#arrow)"/>
+            <rect x="0" y="178" width="330" height="64" rx="10" fill="#f4f6fb"/><text x="12" y="200" font-weight="700" fill="#172033">metrics per stage</text><text x="12" y="220" fill="#5b6678">fast_scan_ms · mapping_ms ·</text><text x="12" y="236" fill="#5b6678">claim_verification_ms · impact_rating_ms</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card" style="height:100%">
+        <h3>Privacy by design</h3>
+        <ul>
+          <li>Site access is an <b>optional</b> permission, requested per origin on click</li>
+          <li>Runs only when you ask, never in the background</li>
+          <li>Classification sends link labels and URLs only</li>
+          <li>Logs carry origin + path, never query strings or policy text</li>
+          <li>Policy pages are fetched same-origin with your own session</li>
+          <li>Status is cleared when the tab closes</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card" style="height:100%">
+        <h3>Robustness</h3>
+        <ul>
+          <li>Policy text is treated as <b>untrusted data</b> in every prompt</li>
+          <li>All UI built with <code>textContent</code>, never <code>innerHTML</code></li>
+          <li>Closed Shadow DOM isolates styles both ways</li>
+          <li>Stale runs dropped by <code>runId</code>; streams aborted on restart</li>
+          <li>Full-review failure keeps the provisional summary</li>
+          <li>Rating failure keeps findings, shield shows unrated</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>Operations</span><span>13</span></div>
+</section>
+
+<section class="slide dark">
+  <p class="kicker">Where it goes next</p>
+  <h2 style="color:#fff">Limits today, options tomorrow</h2>
+  <div class="row grow" style="margin-top:26px">
+    <div class="col">
+      <h3 style="color:#cdd6f5;font-size:18px;margin:0 0 12px">Current limits</h3>
+      <div style="display:grid;gap:12px;font-size:16px;line-height:1.5;color:#b8c2e0">
+        <div>• Same-origin links only. Policies hosted on another domain are skipped.</div>
+        <div>• Manual trigger: the user has to open the popup and click.</div>
+        <div>• Borderline pages (Trust Center 0.29, Security 0.42) fall under the 0.7 threshold.</div>
+        <div>• Pages that render policies client-side may give too little text when fetched.</div>
+        <div>• The API runs locally at <code>localhost:8000</code>.</div>
+      </div>
+    </div>
+    <div class="col">
+      <h3 style="color:#cdd6f5;font-size:18px;margin:0 0 12px">Natural next steps</h3>
+      <div style="display:grid;gap:12px;font-size:16px;line-height:1.5;color:#b8c2e0">
+        <div>• Auto-detect consent checkboxes and offer a check right there.</div>
+        <div>• Allow trusted cross-origin legal hosts (e.g. a separate legal subdomain).</div>
+        <div>• Cache results per document hash so repeat visits are instant.</div>
+        <div>• “Ask this document” in the panel, using the existing <code>/api/ask</code>.</div>
+        <div>• Evaluate rating thresholds on a labeled set of real policies.</div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center;margin-top:10px">
+    <svg width="34" height="34"><use href="#shield-brand"/></svg>
+    <span style="font-size:18px;color:#e7ebf7;font-weight:700">ToS Defender</span>
+    <span style="color:#6f7ba0">— know what you're agreeing to.</span>
+  </div>
+  <div class="footer"><span>Thanks</span><span>14</span></div>
+</section>
+
+</div>
+</div>
+<div class="hint">← → Space · Home/End · P to print</div>
+<div class="nav"><button type="button" id="prev" aria-label="Previous slide">‹</button><span id="counter"></span><button type="button" id="next" aria-label="Next slide">›</button></div>
+<script>
+const deck = document.getElementById("deck");
+const slides = [...document.querySelectorAll(".slide")];
+const counter = document.getElementById("counter");
+const progress = document.getElementById("progress");
+let index = 0;
+function fit() {
+  const scale = Math.min((window.innerWidth - 32) / 1280, (window.innerHeight - 32) / 720);
+  deck.style.transform = `scale(${Math.max(scale, 0.2)})`;
+}
+function show(next) {
+  index = Math.max(0, Math.min(slides.length - 1, next));
+  slides.forEach((slide, position) => slide.classList.toggle("active", position === index));
+  counter.textContent = `${index + 1} / ${slides.length}`;
+  progress.style.width = `${((index + 1) / slides.length) * 100}%`;
+  history.replaceState(null, "", `#${index + 1}`);
+}
+document.addEventListener("keydown", event => {
+  if (["ArrowRight", "PageDown", " ", "Enter"].includes(event.key)) { event.preventDefault(); show(index + 1); }
+  else if (["ArrowLeft", "PageUp", "Backspace"].includes(event.key)) { event.preventDefault(); show(index - 1); }
+  else if (event.key === "Home") show(0);
+  else if (event.key === "End") show(slides.length - 1);
+  else if (event.key.toLowerCase() === "p") window.print();
+});
+document.getElementById("prev").addEventListener("click", () => show(index - 1));
+document.getElementById("next").addEventListener("click", () => show(index + 1));
+window.addEventListener("resize", fit);
+const initial = Number.parseInt(location.hash.slice(1), 10);
+fit();
+show(Number.isFinite(initial) ? initial - 1 : 0);
+</script>
+</body>
+</html>
